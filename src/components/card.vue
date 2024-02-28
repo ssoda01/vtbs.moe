@@ -1,47 +1,69 @@
 <template>
-<div class="columns is-mobile is-multiline">
-  <div class="column smallBottomMarginTopBottomPadding is-6-mobile is-3-tablet is-3-desktop is-3-widescreen is-3-fullhd">
-    <div class="discover" v-if="hover && !worm">
-      <router-link :to="`/detail/${mid}`">
-        <span class="el-icon-discover discoverButton"></span>
-      </router-link>
+  <div class="columns is-mobile is-multiline">
+    <div
+      class="column smallBottomMarginTopBottomPadding is-6-mobile is-3-tablet is-3-desktop is-3-widescreen is-3-fullhd">
+      <div class="discover" v-if="hover && !worm">
+        <router-link :to="`/detail/${mid}`">
+          <span class="el-icon-discover discoverButton"></span>
+        </router-link>
+      </div>
+      <figure class="image is-128x128">
+        <img :src="face" class="face" v-if="face">
+      </figure>
     </div>
-    <figure class="image is-128x128">
-      <img :src="face" class="face" v-if="face">
-    </figure>
-  </div>
 
-  <div class="column is-6 is-hidden-tablet">
-    <badge :status="status" v-if="info.uname"></badge>
-  </div>
+    <div class="column is-6 is-hidden-tablet">
+      <badge :status="status" v-if="info.uname"></badge>
+    </div>
 
-  <div class="column is-12-mobile is-6-tablet is-6-desktop is-6-widescreen is-6-fullhd content smallBottomMarginTopBottomPadding">
-    <h4 class="noMargin">
-      <a :href="`https://live.bilibili.com/${roomid}`" class="tag is-link" v-if="liveStatus" target="_blank">
-        直播中
-      </a>
-      <a :href="`https://live.bilibili.com/${roomid}`" class="tag" v-else-if="roomid && livePage" target="_blank">
-        没播
-      </a>
-      {{uname}}
-      <router-link v-if="worm" to="about" class="tag" title="如何扩充名单: 关于">
-        未收录
-      </router-link>
-      <a :href="`https://space.bilibili.com/${mid}`" target="_blank" class="space tag">
-        {{mid}}
-      </a>
-    </h4>
-    <span v-if="liveStatus" class="el-icon-ship">{{title}}</span>
-    <p>{{sign}}</p>
-    <hr class="is-hidden-tablet">
-  </div>
+    <div
+      class="column is-12-mobile is-6-tablet is-6-desktop is-6-widescreen is-6-fullhd content smallBottomMarginTopBottomPadding">
+      <h4 class="noMargin">
+        <a :href="`https://live.bilibili.com/${roomid}`" class="tag is-link" v-if="liveStatus" target="_blank">
+          直播中
+        </a>
+        <a :href="`https://live.bilibili.com/${roomid}`" class="tag" v-else-if="roomid && livePage" target="_blank">
+          没播
+        </a>
+        <template v-if="query && typeof query === 'string' && query != ''">
+          <p class="searchHighlightRow" v-for="(word, index) in uname.split(query)" :key="index">
+            <span v-if="index > 0">
+              <span class="searchHighlightLighted">{{ query }}</span>
+            </span>
+            <span v-text="word"></span>
+          </p>
+        </template>
+        <template v-else>
+          {{ uname }}
+        </template>
+        <router-link v-if="worm" to="about" class="tag" title="如何扩充名单: 关于">
+          未收录
+        </router-link>
+        <a :href="`https://space.bilibili.com/${mid}`" target="_blank" class="space tag">
+          {{ mid }}
+        </a>
+      </h4>
+      <span v-if="liveStatus" class="el-icon-ship">{{ title }}</span>
+      <template v-if="query && typeof query === 'string' && query != ''">
+        <p class="searchHighlightRow" v-for="(word, index) in this.sign.split(query)" :key="index">
+          <span v-if="index > 0">
+            <span class="searchHighlightLighted">{{ query }}</span>
+          </span>
+          <span v-text="word"></span>
+        </p>
+      </template>
+      <template v-else>
+        {{ sign }}
+      </template>
+      <hr class="is-hidden-tablet">
+    </div>
 
-  <div class="column is-hidden-mobile is-3-mobile is-3-tablet is-3-desktop is-3-widescreen is-3-fullhd">
-    <badge :status="status" v-if="info.uname"></badge>
+    <div class="column is-hidden-mobile is-3-mobile is-3-tablet is-3-desktop is-3-widescreen is-3-fullhd">
+      <badge :status="status" v-if="info.uname"></badge>
+    </div>
+    <div class="column is-6 is-hidden-mobile smallMargin">
+    </div>
   </div>
-  <div class="column is-6 is-hidden-mobile smallMargin">
-  </div>
-</div>
 </template>
 
 <script>
@@ -55,12 +77,16 @@ export default {
   props: {
     vtb: Object,
     hover: Boolean,
+    query: {
+      type: String,
+      default: ''
+    }
   },
   computed: {
-    info: function() {
+    info: function () {
       return this.$store.getters.info[this.mid] || this.vtb
     },
-    face: function() {
+    face: function () {
       if (!this.$store.getters.face[this.mid]) {
         return undefined
       }
@@ -70,19 +96,19 @@ export default {
       }
       return `${face}@256h_256w`
     },
-    mid: function() {
+    mid: function () {
       return this.vtb.mid
     },
-    roomid: function() {
+    roomid: function () {
       return this.info.roomid
     },
-    uname: function() {
+    uname: function () {
       return this.info.uname
     },
-    note: function() {
+    note: function () {
       return this.vtb.note
     },
-    sign: function() {
+    sign: function () {
       return this.info.sign || this.mid
     },
     lastLive() {
@@ -103,7 +129,7 @@ export default {
     worm() {
       return this.info.worm
     },
-    status: function() {
+    status: function () {
       const object = {
         follower: this.info.follower,
       }
@@ -128,10 +154,10 @@ export default {
       }
       return object
     },
-    liveStatus: function() {
+    liveStatus: function () {
       return this.info.liveStatus
     },
-    title: function() {
+    title: function () {
       return this.info.title
     },
     badgeView() {
@@ -182,5 +208,13 @@ export default {
 
 .discoverButton:hover {
   opacity: 0.4;
+}
+
+.searchHighlightRow {
+  display: inline;
+}
+
+.searchHighlightLighted {
+  color: #409eff
 }
 </style>

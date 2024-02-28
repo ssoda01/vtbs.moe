@@ -1,19 +1,22 @@
 <template>
-<div class="column is-gapless gap">
-  <input class="input search is-rounded vtb-search" v-model="search" type="text" placeholder="查找主播~">
-  <div class="columns">
-    <div class="column vtb-column"></div>
-    <div class="column is-full-mobile is-11-tablet is-10-desktop is-three-fifths-widescreen is-7-fullhd" :style="{height: sumHeight}" ref="container">
-      <p v-if="cacheAge">数据缓存于: <span class="tag is-rounded is-info smallMargin">{{cacheAge}}</span></p>
-      <progress class="progress" max="100" v-if="!currentVtbs.length"></progress>
-      <card v-if="mountCard" :vtb="mountCard" hover class="aboveTop" ref="mountCard"></card>
-      <transition-group name="flip-list">
-        <card v-for="{vtb, h} in rankLimit" :vtb="vtb" hover :key="vtb.mid" class="card" :style="{top: h, width: unitWidth}"></card>
-      </transition-group>
+  <div class="column is-gapless gap">
+    <input ref="searchInput" :class="`input search is-rounded vtb-search ${searchFocusStatus ? 'search-focus' : ''}`"
+      v-model="search" type="text" placeholder="查找主播~">
+    <div class="columns">
+      <div class="column vtb-column"></div>
+      <div class="column is-full-mobile is-11-tablet is-10-desktop is-three-fifths-widescreen is-7-fullhd"
+        :style="{ height: sumHeight }" ref="container">
+        <p v-if="cacheAge">数据缓存于: <span class="tag is-rounded is-info smallMargin">{{ cacheAge }}</span></p>
+        <progress class="progress" max="100" v-if="!currentVtbs.length"></progress>
+        <card :query="search" v-if="mountCard" :vtb="mountCard" hover class="aboveTop" ref="mountCard"></card>
+        <transition-group name="flip-list">
+          <card :query="search" v-for="{ vtb, h } in rankLimit" :vtb="vtb" hover :key="vtb.mid" class="card"
+            :style="{ top: h, width: unitWidth }"></card>
+        </transition-group>
+      </div>
+      <div class="column"></div>
     </div>
-    <div class="column"></div>
   </div>
-</div>
 </template>
 
 <script>
@@ -33,15 +36,23 @@ export default {
       'fetchSecretList',
     ]),
     handleKeyDown(event) {
-      // 检查是否按下了搜索快捷键（Ctrl+F 或 Cmd+F）
+      // 快捷键事件
+      // 搜索拦截（Ctrl+F 或 Cmd+F）
       const isSearchShortcut = (event.ctrlKey || event.metaKey) && event.key === 'f'
-
+      // ESC按钮监听
+      const isSearchEsc = (event.key === 'Escape')
       if (isSearchShortcut) {
-        // 阻止默认搜索行为
+        // 阻止默认搜索
         event.preventDefault()
-        alert('search')
-        // 聚焦页面子元素
-        this.focusChildElement()
+        this.searchFocusStatus = true
+        this.$refs.searchInput.focus();
+      }
+      if (isSearchEsc) {
+        if (this.searchFocusStatus) {
+          this.$refs.searchInput.blur();
+          this.searchFocusStatus = false
+        }
+
       }
     },
   },
@@ -55,6 +66,7 @@ export default {
       unitHeight: 172,
       unitWidth: undefined,
       ratio: 0,
+      searchFocusStatus: false,
     }
   },
   components: {
@@ -108,7 +120,7 @@ export default {
     secretPage() {
       return this.$route.path.includes('secret')
     },
-    rank: function() {
+    rank: function () {
       if (this.$route.path.includes('live')) {
         return this.liveRank
       }
@@ -127,13 +139,20 @@ export default {
       return this.followerRank
     },
     preRank() {
+      console.log('this.search', this.search)
       const keys = this.search.toLowerCase().split(' ').filter(Boolean)
       if (keys.length) {
-        return this.rank.filter(i => keys.every(key => ((this.$store.getters.info[i.mid] || {}).uname || []).toLowerCase().includes(key)))
+        return this.rank.filter(i => keys.every(key => {
+          const user = this.$store.getters.info[i.mid];
+          if (user && user.uname && typeof user.uname === 'string') {
+            return user.uname.toLowerCase().includes(key);
+          }
+          return false;
+        }));
       }
       return this.rank
     },
-    rankLimit: function() {
+    rankLimit: function () {
       return this.preRank
         .slice(this.skip, this.skip + SHOW)
         .map((vtb, i) => ({ vtb, h: `${(i + this.skip) * this.unitHeight + this.baseHeight}px` }))
@@ -155,6 +174,8 @@ export default {
   mounted() {
     this.intersectionObserver.observe(this.$refs.container)
     window.addEventListener('keydown', this.handleKeyDown)
+    this.$refs.searchInput.addEventListener('keydown', this.handleKeyDown)
+
   },
   destroyed() {
     this.resizeObserver.disconnect()
@@ -178,7 +199,8 @@ export default {
 }
 
 .vtb-search:focus {
-  box-shadow: inset 0 0.0625em 1em rgba(10, 10, 10, 0.05);
+  box-shadow: inset 0 0.0625em 1em rgba(10, 10, 10, 0.05),
+    0 0 3000px 3000px rgba(10, 10, 10, 0.5);
 }
 
 .search-focus {
@@ -186,8 +208,9 @@ export default {
   right: calc(50vw - 130px);
   box-shadow: 0 0 3000px 3000px rgba(10, 10, 10, 0.5);
 
-  transition:.5s cubic-bezier(0.39, 0.575, 0.565, 1);
+  transition: .5s cubic-bezier(0.39, 0.575, 0.565, 1);
 }
+
 .vtb-column {
   padding: 25px;
 }
