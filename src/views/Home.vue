@@ -32,6 +32,18 @@ export default {
     ...mapActions([
       'fetchSecretList',
     ]),
+    handleKeyDown(event) {
+      // 检查是否按下了搜索快捷键（Ctrl+F 或 Cmd+F）
+      const isSearchShortcut = (event.ctrlKey || event.metaKey) && event.key === 'f'
+
+      if (isSearchShortcut) {
+        // 阻止默认搜索行为
+        event.preventDefault()
+        alert('search')
+        // 聚焦页面子元素
+        this.focusChildElement()
+      }
+    },
   },
 
   data() {
@@ -142,6 +154,7 @@ export default {
   },
   mounted() {
     this.intersectionObserver.observe(this.$refs.container)
+    window.addEventListener('keydown', this.handleKeyDown)
   },
   destroyed() {
     this.resizeObserver.disconnect()
@@ -168,6 +181,13 @@ export default {
   box-shadow: inset 0 0.0625em 1em rgba(10, 10, 10, 0.05);
 }
 
+.search-focus {
+  top: calc(50% - 12px);
+  right: calc(50vw - 130px);
+  box-shadow: 0 0 3000px 3000px rgba(10, 10, 10, 0.5);
+
+  transition:.5s cubic-bezier(0.39, 0.575, 0.565, 1);
+}
 .vtb-column {
   padding: 25px;
 }
