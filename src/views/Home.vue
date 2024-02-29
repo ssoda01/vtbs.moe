@@ -8,9 +8,9 @@
         :style="{ height: sumHeight }" ref="container">
         <p v-if="cacheAge">数据缓存于: <span class="tag is-rounded is-info smallMargin">{{ cacheAge }}</span></p>
         <progress class="progress" max="100" v-if="!currentVtbs.length"></progress>
-        <card :query="search" v-if="mountCard" :vtb="mountCard" hover class="aboveTop" ref="mountCard"></card>
+        <card :keyword="search" v-if="mountCard" :vtb="mountCard" hover class="aboveTop" ref="mountCard"></card>
         <transition-group name="flip-list">
-          <card :query="search" v-for="{ vtb, h } in rankLimit" :vtb="vtb" hover :key="vtb.mid" class="card"
+          <card :keyword="search" v-for="{ vtb, h } in rankLimit" :vtb="vtb" hover :key="vtb.mid" class="card"
             :style="{ top: h, width: unitWidth }"></card>
         </transition-group>
       </div>
@@ -55,6 +55,11 @@ export default {
 
       }
     },
+    handleSearchBlur() {
+      if(this.searchFocusStatus){
+        this.searchFocusStatus = false
+      }
+    }
   },
 
   data() {
@@ -139,7 +144,6 @@ export default {
       return this.followerRank
     },
     preRank() {
-      console.log('this.search', this.search)
       const keys = this.search.toLowerCase().split(' ').filter(Boolean)
       if (keys.length) {
         return this.rank.filter(i => keys.every(key => {
@@ -175,6 +179,7 @@ export default {
     this.intersectionObserver.observe(this.$refs.container)
     window.addEventListener('keydown', this.handleKeyDown)
     this.$refs.searchInput.addEventListener('keydown', this.handleKeyDown)
+    this.$refs.searchInput.addEventListener('blur', this.handleSearchBlur)
 
   },
   destroyed() {

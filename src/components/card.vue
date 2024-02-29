@@ -25,17 +25,7 @@
         <a :href="`https://live.bilibili.com/${roomid}`" class="tag" v-else-if="roomid && livePage" target="_blank">
           没播
         </a>
-        <template v-if="query && typeof query === 'string' && query != ''">
-          <p class="searchHighlightRow" v-for="(word, index) in uname.split(query)" :key="index">
-            <span v-if="index > 0">
-              <span class="searchHighlightLighted">{{ query }}</span>
-            </span>
-            <span v-text="word"></span>
-          </p>
-        </template>
-        <template v-else>
-          {{ uname }}
-        </template>
+        <highlight-text :text="uname" :keyword="keyword" v-if="uname"></highlight-text>
         <router-link v-if="worm" to="about" class="tag" title="如何扩充名单: 关于">
           未收录
         </router-link>
@@ -44,17 +34,7 @@
         </a>
       </h4>
       <span v-if="liveStatus" class="el-icon-ship">{{ title }}</span>
-      <template v-if="query && typeof query === 'string' && query != ''">
-        <p class="searchHighlightRow" v-for="(word, index) in this.sign.split(query)" :key="index">
-          <span v-if="index > 0">
-            <span class="searchHighlightLighted">{{ query }}</span>
-          </span>
-          <span v-text="word"></span>
-        </p>
-      </template>
-      <template v-else>
-        {{ sign }}
-      </template>
+      <highlight-text :text="sign.toString()" :keyword="keyword"></highlight-text>
       <hr class="is-hidden-tablet">
     </div>
 
@@ -68,16 +48,18 @@
 
 <script>
 import badge from '@/components/badge'
+import highlightText from '@/components/highlightText'
 import moment from 'moment'
 
 export default {
   components: {
     badge,
+    'highlight-text': highlightText
   },
   props: {
     vtb: Object,
     hover: Boolean,
-    query: {
+    keyword: {
       type: String,
       default: ''
     }
@@ -103,13 +85,13 @@ export default {
       return this.info.roomid
     },
     uname: function () {
-      return this.info.uname
+      return this.info.uname || ''
     },
     note: function () {
       return this.vtb.note
     },
     sign: function () {
-      return this.info.sign || this.mid
+      return this.info.sign || this.mid || ''
     },
     lastLive() {
       return this.info.lastLive || {}
@@ -210,11 +192,4 @@ export default {
   opacity: 0.4;
 }
 
-.searchHighlightRow {
-  display: inline;
-}
-
-.searchHighlightLighted {
-  color: #409eff
-}
 </style>
