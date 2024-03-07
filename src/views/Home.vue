@@ -1,7 +1,11 @@
 <template>
   <div class="column is-gapless gap">
-    <input ref="searchInput" :class="`input search is-rounded vtb-search ${searchFocusStatus ? 'search-focus' : ''}`"
-      v-model="search" type="text" placeholder="查找主播~">
+    <div :class="`vtb-search ${searchFocusStatus ? 'search-focus' : ''}`">
+      <div class="is-relative">
+        <input ref="searchInput" :class="`input search is-rounded`" v-model="search" type="text" placeholder="查找主播~">
+        <div v-if="!searchFocusStatus && (!search || search.length === 0)" class="search-shortcut"><span>/</span></div>
+      </div>
+    </div>
     <div class="columns">
       <div class="column vtb-column"></div>
       <div class="column is-full-mobile is-11-tablet is-10-desktop is-three-fifths-widescreen is-7-fullhd"
@@ -38,12 +42,12 @@ export default {
     handleKeyDown(event) {
       // 快捷键事件
       // 搜索拦截（Ctrl+F 或 Cmd+F）
-      const isSearchShortcut = (event.ctrlKey || event.metaKey) && event.key === 'f'
+      const isSearchShortcut = (event.key === '/')
       // ESC按钮监听
       const isSearchEsc = (event.key === 'Escape')
       if (isSearchShortcut) {
         // 阻止默认搜索
-        event.preventDefault()
+        this.searchFocusStatus ? '' : event.preventDefault()
         this.searchFocusStatus = true
         this.$refs.searchInput.focus();
       }
@@ -56,9 +60,19 @@ export default {
       }
     },
     handleSearchBlur() {
-      if(this.searchFocusStatus){
+      if (this.searchFocusStatus) {
         this.searchFocusStatus = false
       }
+    },
+    handleAddKeyDownEvents() {
+      window.addEventListener('keydown', this.handleKeyDown)
+      this.$refs.searchInput.addEventListener('keydown', this.handleKeyDown)
+      this.$refs.searchInput.addEventListener('blur', this.handleSearchBlur)
+    },
+    handleRemoveKeyDownEvents() {
+      window.removeEventListener('keydown', this.handleKeyDown);
+      this.$refs.searchInput.removeEventListener('keydown', this.handleKeyDown);
+      this.$refs.searchInput.removeEventListener('blur', this.handleSearchBlur);
     }
   },
 
@@ -94,7 +108,7 @@ export default {
           await this.fetchSecretList()
         }
       }
-    }
+    },
   },
   computed: {
     ...mapState(['currentVtbs', 'cachedTime']),
@@ -177,10 +191,10 @@ export default {
   },
   mounted() {
     this.intersectionObserver.observe(this.$refs.container)
-    window.addEventListener('keydown', this.handleKeyDown)
-    this.$refs.searchInput.addEventListener('keydown', this.handleKeyDown)
-    this.$refs.searchInput.addEventListener('blur', this.handleSearchBlur)
-
+    this.handleAddKeyDownEvents()
+  },
+  beforeDestroy() {
+    this.handleRemoveKeyDownEvents()
   },
   destroyed() {
     this.resizeObserver.disconnect()
@@ -193,26 +207,48 @@ export default {
 .vtb-search {
   right: 10px;
   bottom: 10px;
-  box-shadow: inset 0 0.0625em 1em rgba(10, 10, 10, 0.05);
-  outline: none;
-  /* border: none; */
   width: 260px;
+  height: 40px;
   position: fixed;
   z-index: 99;
+}
+
+.vtb-search>div>input {
+  box-shadow: inset 0 0.0625em 1em rgba(10, 10, 10, 0.05);
+  outline: none;
   backdrop-filter: blur(6px) grayscale(50%);
   background-color: rgba(255, 255, 255, 0.3);
 }
 
-.vtb-search:focus {
-  box-shadow: inset 0 0.0625em 1em rgba(10, 10, 10, 0.05),
-    0 0 3000px 3000px rgba(10, 10, 10, 0.5);
+.search-shortcut {
+  width: 24px;
+  color: #dbdbdb;
+  background-color: rgba(150, 150, 150, 0.06);
+  border: 1px solid #dbdbdb;
+  border-radius: 4px;
+  right: 24px;
+  top: 8px;
+  height: 24px;
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-shortcut>span {
+  font-size: 14px;
+  line-height: 16px;
 }
 
 .search-focus {
   top: calc(50% - 12px);
   right: calc(50vw - 130px);
-  box-shadow: 0 0 3000px 3000px rgba(10, 10, 10, 0.5);
+  transition: .5s cubic-bezier(0.39, 0.575, 0.565, 1);
+}
 
+.search-focus>div>input {
+  box-shadow: inset 0 0.0625em 1em rgba(10, 10, 10, 0.05),
+    0 0 3000px 3000px rgba(10, 10, 10, 0.5);
   transition: .5s cubic-bezier(0.39, 0.575, 0.565, 1);
 }
 
